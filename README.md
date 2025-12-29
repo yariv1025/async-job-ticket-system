@@ -50,14 +50,12 @@ flowchart TB
     Q -->|3. ReceiveMessage<br/>Long Poll| W
     W -->|4. GetItem| DDB
     W -->|5. UpdateItem<br/>Status: PROCESSING| DDB
-    W -->|6. Process Job| W
-    W -->|7. UpdateItem<br/>Status: SUCCEEDED| DDB
-    W -->|8. DeleteMessage| Q
-    C -->|GET /jobs/{id}| API
+    W -->|6. UpdateItem<br/>Status: SUCCEEDED| DDB
+    W -->|7. DeleteMessage| Q
+    C -->|GET /jobs/id| API
     API -->|GetItem| DDB
     
     %% Failure Path
-    W -.->|Transient Failure| W
     Q -->|MaxReceiveCount: 3| DLQ
     DLQ -->|Event Source| L
     L -->|UpdateItem<br/>Status: FAILED_FINAL| DDB
