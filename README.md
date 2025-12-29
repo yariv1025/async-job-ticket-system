@@ -264,7 +264,6 @@ The worker should process the job within a few seconds, and the status should ch
 - **[Quick Start Guide](docs/quick-start.md)** - Step-by-step instructions for local development
 - **[Architecture Documentation](docs/architecture.md)** - Detailed system design and data flows
 - **[API Documentation](docs/api.md)** - REST API endpoints and examples
-- **[Technology Guide](docs/tech-guide.md)** - Explanations of all technologies used
 - **[Deployment Guide](docs/deployment.md)** - AWS and Kubernetes deployment instructions
 
 ## 🏛️ Project Structure
@@ -317,7 +316,6 @@ The worker should process the job within a few seconds, and the status should ch
     ├── quick-start.md
     ├── architecture.md
     ├── api.md
-    ├── tech-guide.md
     └── deployment.md
 ```
 
