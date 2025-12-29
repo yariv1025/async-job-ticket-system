@@ -1,0 +1,14 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: svc-worker-config
+  namespace: jobsys
+data:
+  AWS_REGION: "us-east-1"
+  ENV: "dev"
+  LOG_LEVEL: "INFO"
+  DDB_TABLE: "Jobs"
+  SQS_QUEUE_URL: #TODO:""  # Will be set from Parameter Store or override
+  MAX_MESSAGES: "10"
+  WAIT_TIME_SECONDS: "20"
+

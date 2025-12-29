@@ -1,0 +1,56 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: AWS::Serverless-2016-10-31
+Description: DLQ handler Lambda function
+
+Parameters:
+  Environment:
+    Type: String
+    Default: dev
+    Description: Environment name
+  TableName:
+    Type: String
+    Default: Jobs
+    Description: DynamoDB table name
+  DLQArn:
+    Type: String
+    Description: DLQ ARN
+
+Resources:
+  DLQHandlerFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: !Sub '${Environment}-dlq-handler'
+      Runtime: python3.11
+      Handler: handler.handler
+      CodeUri: src/
+      Timeout: 30
+      MemorySize: 128
+      Environment:
+        Variables:
+          DDB_TABLE: !Ref TableName
+          AWS_REGION: !Ref AWS::Region
+      Events:
+        DLQEvent:
+          Type: SQS
+          Properties:
+            Queue: !Ref DLQArn
+            BatchSize: 1
+      Policies:
+        - DynamoDBCrudPolicy:
+            TableName: !Ref TableName
+        - Version: '2012-10-17'
+          Statement:
+            - Effect: Allow
+              Action:
+                - xray:PutTraceSegments
+                - xray:PutTelemetryRecords
+              Resource: '*'
+      Tracing: Active
+
+Outputs:
+  DLQHandlerFunctionArn:
+    Description: DLQ Handler Function ARN
+    Value: !GetAtt DLQHandlerFunction.Arn
+    Export:
+      Name: !Sub '${Environment}-dlq-handler-arn'
+

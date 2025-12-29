@@ -1,0 +1,67 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: svc-worker
+  namespace: jobsys
+  labels:
+    app: svc-worker
+    component: worker
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: svc-worker
+  template:
+    metadata:
+      labels:
+        app: svc-worker
+        component: worker
+    spec:
+      containers:
+      - name: svc-worker
+        image: #TODO:<ECR_ACCOUNT>.dkr.ecr.us-east-1.amazonaws.com/svc-worker:latest
+        imagePullPolicy: Always
+        env:
+        - name: AWS_REGION
+          valueFrom:
+            configMapKeyRef:
+              name: svc-worker-config
+              key: AWS_REGION
+        - name: ENV
+          valueFrom:
+            configMapKeyRef:
+              name: svc-worker-config
+              key: ENV
+        - name: LOG_LEVEL
+          valueFrom:
+            configMapKeyRef:
+              name: svc-worker-config
+              key: LOG_LEVEL
+        - name: DDB_TABLE
+          valueFrom:
+            configMapKeyRef:
+              name: svc-worker-config
+              key: DDB_TABLE
+        - name: SQS_QUEUE_URL
+          valueFrom:
+            configMapKeyRef:
+              name: svc-worker-config
+              key: SQS_QUEUE_URL
+        - name: MAX_MESSAGES
+          valueFrom:
+            configMapKeyRef:
+              name: svc-worker-config
+              key: MAX_MESSAGES
+        - name: WAIT_TIME_SECONDS
+          valueFrom:
+            configMapKeyRef:
+              name: svc-worker-config
+              key: WAIT_TIME_SECONDS
+        resources:
+          requests:
+            cpu: 100m
+            memory: 128Mi
+          limits:
+            cpu: 500m
+            memory: 256Mi
+
