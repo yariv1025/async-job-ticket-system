@@ -1,0 +1,79 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: svc-api
+  namespace: jobsys
+  labels:
+    app: svc-api
+    component: api
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: svc-api
+  template:
+    metadata:
+      labels:
+        app: svc-api
+        component: api
+    spec:
+      containers:
+      - name: svc-api
+        image: #TODO: <ECR_ACCOUNT>.dkr.ecr.us-east-1.amazonaws.com/svc-api:latest
+        imagePullPolicy: Always
+        ports:
+        - containerPort: 8080
+          name: http
+        env:
+        - name: AWS_REGION
+          valueFrom:
+            configMapKeyRef:
+              name: svc-api-config
+              key: AWS_REGION
+        - name: ENV
+          valueFrom:
+            configMapKeyRef:
+              name: svc-api-config
+              key: ENV
+        - name: LOG_LEVEL
+          valueFrom:
+            configMapKeyRef:
+              name: svc-api-config
+              key: LOG_LEVEL
+        - name: PORT
+          valueFrom:
+            configMapKeyRef:
+              name: svc-api-config
+              key: PORT
+        - name: DDB_TABLE
+          valueFrom:
+            configMapKeyRef:
+              name: svc-api-config
+              key: DDB_TABLE
+        - name: SQS_QUEUE_URL
+          valueFrom:
+            configMapKeyRef:
+              name: svc-api-config
+              key: SQS_QUEUE_URL
+        resources:
+          requests:
+            cpu: 100m
+            memory: 128Mi
+          limits:
+            cpu: 500m
+            memory: 256Mi
+        livenessProbe:
+          httpGet:
+            path: /healthz
+            port: 8080
+          initialDelaySeconds: 10
+          periodSeconds: 30
+          timeoutSeconds: 3
+        readinessProbe:
+          httpGet:
+            path: /readyz
+            port: 8080
+          initialDelaySeconds: 5
+          periodSeconds: 10
+          timeoutSeconds: 3
+

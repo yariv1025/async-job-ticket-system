@@ -1,0 +1,13 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: svc-api-config
+  namespace: jobsys
+data:
+  AWS_REGION: "us-east-1"
+  ENV: "dev"
+  LOG_LEVEL: "INFO"
+  PORT: "8080"
+  DDB_TABLE: "Jobs"
+  SQS_QUEUE_URL: #TODD:""  # Will be set from Parameter Store or override
+
