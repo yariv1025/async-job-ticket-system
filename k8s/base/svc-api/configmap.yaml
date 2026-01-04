@@ -9,5 +9,9 @@ data:
   LOG_LEVEL: "INFO"
   PORT: "8080"
   DDB_TABLE: "Jobs"
-  SQS_QUEUE_URL: #TODD:""  # Will be set from Parameter Store or override
+  SQS_QUEUE_URL: "http://host.minikube.internal:4566/000000000000/jobs-queue"
+  AWS_ENDPOINT_URL: "http://host.minikube.internal:4566"
+  AWS_ACCESS_KEY_ID: "test"
+  AWS_SECRET_ACCESS_KEY: "test"
+  AWS_DEFAULT_REGION: "us-east-1"
 

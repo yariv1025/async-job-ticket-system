@@ -1,5 +1,5 @@
 # Multi-stage build for svc-worker
-FROM python:3.11-slim as builder
+FROM python:3.11-slim AS builder
 
 WORKDIR /build
 
@@ -15,7 +15,7 @@ COPY pyproject.toml ./
 RUN pip install --no-cache-dir --upgrade pip && \
     pip install --no-cache-dir poetry && \
     poetry config virtualenvs.create false && \
-    poetry install --no-dev
+    poetry install --without dev --no-root
 
 # Runtime stage
 FROM python:3.11-slim

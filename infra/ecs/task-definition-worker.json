@@ -1,0 +1,57 @@
+{
+  "family": "svc-worker",
+  "networkMode": "awsvpc",
+  "requiresCompatibilities": ["FARGATE"],
+  "cpu": "256",
+  "memory": "512",
+  "executionRoleArn": "arn:aws:iam::<ACCOUNT_ID>:role/ecsTaskExecutionRole",
+  "taskRoleArn": "arn:aws:iam::<ACCOUNT_ID>:role/svc-worker-task-role",
+  "containerDefinitions": [
+    {
+      "name": "svc-worker",
+      "image": "<ECR_ACCOUNT>.dkr.ecr.<REGION>.amazonaws.com/svc-worker:latest",
+      "essential": true,
+      "environment": [
+        {
+          "name": "AWS_REGION",
+          "value": "<REGION>"
+        },
+        {
+          "name": "ENV",
+          "value": "<ENV>"
+        },
+        {
+          "name": "LOG_LEVEL",
+          "value": "INFO"
+        },
+        {
+          "name": "DDB_TABLE",
+          "value": "Jobs"
+        },
+        {
+          "name": "MAX_MESSAGES",
+          "value": "10"
+        },
+        {
+          "name": "WAIT_TIME_SECONDS",
+          "value": "20"
+        }
+      ],
+      "secrets": [
+        {
+          "name": "SQS_QUEUE_URL",
+          "valueFrom": "arn:aws:ssm:<REGION>:<ACCOUNT_ID>:parameter/jobsys/<ENV>/sqs/queue-url"
+        }
+      ],
+      "logConfiguration": {
+        "logDriver": "awslogs",
+        "options": {
+          "awslogs-group": "/ecs/jobsys/svc-worker",
+          "awslogs-region": "<REGION>",
+          "awslogs-stream-prefix": "ecs"
+        }
+      }
+    }
+  ]
+}
+

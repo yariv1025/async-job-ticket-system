@@ -19,8 +19,9 @@ spec:
     spec:
       containers:
       - name: svc-api
-        image: #TODO: <ECR_ACCOUNT>.dkr.ecr.us-east-1.amazonaws.com/svc-api:latest
-        imagePullPolicy: Always
+        # image: #TODO: <ECR_ACCOUNT>.dkr.ecr.us-east-1.amazonaws.com/svc-api:latest
+        image: docker.io/library/svc-api:latest # local image
+        imagePullPolicy: Never #Always
         ports:
         - containerPort: 8080
           name: http
@@ -55,6 +56,26 @@ spec:
             configMapKeyRef:
               name: svc-api-config
               key: SQS_QUEUE_URL
+        - name: AWS_ENDPOINT_URL
+          valueFrom:
+            configMapKeyRef:
+              name: svc-api-config
+              key: AWS_ENDPOINT_URL
+        - name: AWS_ACCESS_KEY_ID
+          valueFrom:
+            configMapKeyRef:
+              name: svc-api-config
+              key: AWS_ACCESS_KEY_ID
+        - name: AWS_SECRET_ACCESS_KEY
+          valueFrom:
+            configMapKeyRef:
+              name: svc-api-config
+              key: AWS_SECRET_ACCESS_KEY
+        - name: AWS_DEFAULT_REGION
+          valueFrom:
+            configMapKeyRef:
+              name: svc-api-config
+              key: AWS_DEFAULT_REGION
         resources:
           requests:
             cpu: 100m

@@ -56,6 +56,10 @@ class JobService:
         if trace_id is None:
             trace_id = str(uuid4())
 
+        # Validate params is not empty (DynamoDB/LocalStack requirement)
+        if not params:
+            raise ValueError("params cannot be empty - at least one parameter is required")
+
         # Check idempotency if key provided
         if idempotency_key:
             existing_job = self.dynamodb_repo.get_job_by_idempotency_key(idempotency_key)

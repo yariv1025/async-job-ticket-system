@@ -13,8 +13,7 @@ def setup_xray(service_name: str = "svc-worker"):
     """Set up X-Ray tracing."""
     # Only enable X-Ray if not in local development
     if _IS_LOCAL:
-        # Local development - disable X-Ray completely
-        xray_recorder.configure(service=service_name, context_missing="LOG_ERROR")
+        # Local development - disable X-Ray completely (don't configure it)
         return
 
     xray_recorder.configure(
@@ -22,9 +21,8 @@ def setup_xray(service_name: str = "svc-worker"):
         sampling_rules={"version": 1, "default": {"fixed_rate": 0.1}},
     )
 
-    # Patch boto3 only if not in local dev
-    if not _IS_LOCAL:
-        xray_patch(["boto3"])
+    # Patch boto3 for X-Ray tracing
+    xray_patch(["boto3"])
 
 
 def should_patch_xray():

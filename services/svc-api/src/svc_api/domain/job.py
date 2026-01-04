@@ -89,23 +89,35 @@ class Job:
 
     def to_dict(self) -> Dict[str, Any]:
         """Convert job to dictionary for DynamoDB."""
-        return {
+        item = {
             "jobId": self.job_id,
             "status": self.status.value,
             "jobType": self.job_type,
             "priority": self.priority,
-            "params": self.params,
-            "metadata": self.metadata,
-            "idempotencyKey": self.idempotency_key,
-            "traceId": self.trace_id,
-            "payloadHash": self.payload_hash,
+            "params": self.params if self.params else {},
             "createdAt": self.created_at.isoformat(),
             "updatedAt": self.updated_at.isoformat(),
             "attempts": self.attempts,
-            "result": self.result,
-            "error": self.error,
             "expiresAt": self.expires_at,
         }
+        
+        # Only include metadata if it's not empty (DynamoDB doesn't accept empty maps)
+        if self.metadata:
+            item["metadata"] = self.metadata
+        
+        # Only include optional fields if they are not None
+        if self.idempotency_key is not None:
+            item["idempotencyKey"] = self.idempotency_key
+        if self.trace_id is not None:
+            item["traceId"] = self.trace_id
+        if self.payload_hash is not None:
+            item["payloadHash"] = self.payload_hash
+        if self.result is not None:
+            item["result"] = self.result
+        if self.error is not None:
+            item["error"] = self.error
+            
+        return item
 
     @classmethod
     def from_dict(cls, data: Dict[str, Any]) -> "Job":

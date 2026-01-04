@@ -165,11 +165,16 @@ flowchart TB
 - **DLQ for final failures**: Jobs that fail after all retries
 - **Retry endpoint**: Manual retry for stuck jobs
 
-### ☸️ Kubernetes Ready
-- **Full K8s deployment**: Deployments, Services, ConfigMaps
+### ☸️ Kubernetes Ready (Local Only)
+- **Full K8s deployment**: Deployments, Services, ConfigMaps for local learning
 - **Health probes**: Liveness and readiness checks
 - **Resource limits**: CPU and memory constraints
-- **Environment-based configs**: Dev/staging/prod overlays
+- **Local cluster support**: Works with minikube, kind, k3d
+
+### ☁️ AWS Cloud Deployment
+- **ECS Fargate**: Serverless container deployment (recommended)
+- **EC2 + Docker Compose**: Simple single-instance deployment
+- **No Kubernetes required**: Simpler alternatives for small applications
 
 ## 🚀 Quick Start
 
@@ -264,7 +269,8 @@ The worker should process the job within a few seconds, and the status should ch
 - **[Quick Start Guide](docs/quick-start.md)** - Step-by-step instructions for local development
 - **[Architecture Documentation](docs/architecture.md)** - Detailed system design and data flows
 - **[API Documentation](docs/api.md)** - REST API endpoints and examples
-- **[Deployment Guide](docs/deployment.md)** - AWS and Kubernetes deployment instructions
+- **[Deployment Guide](docs/deployment.md)** - Complete AWS deployment instructions
+- **[Deployment Options](docs/deployment-options.md)** - Comparison of deployment options (K8s local, ECS, EC2)
 
 ## 🏛️ Project Structure
 
@@ -292,11 +298,21 @@ The worker should process the job within a few seconds, and the status should ch
 │   │   ├── create-queues.sh  # SQS queues and DLQ
 │   │   ├── create-ecr-repos.sh  # ECR repositories
 │   │   └── setup-parameter-store.sh  # Parameter Store config
+│   ├── ecs/                  # ECS Fargate deployment (recommended)
+│   │   ├── task-definition-api.json
+│   │   ├── task-definition-worker.json
+│   │   ├── create-cluster.sh
+│   │   └── deploy-ecs.sh
+│   ├── ec2/                  # EC2 + Docker Compose deployment
+│   │   ├── docker-compose.prod.yml
+│   │   ├── create-ec2-instance.sh
+│   │   └── deploy-to-ec2.sh
 │   └── iam/                  # IAM policies
 │       ├── svc-api-policy.json
 │       ├── svc-worker-policy.json
-│       └── lambda-policy.json
-├── k8s/                      # Kubernetes manifests
+│       ├── lambda-policy.json
+│       └── ecs-task-execution-role-policy.json
+├── k8s/                      # Kubernetes manifests (LOCAL ONLY)
 │   ├── base/                 # Base configurations
 │   │   ├── namespace.yaml
 │   │   ├── svc-api/

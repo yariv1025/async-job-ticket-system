@@ -145,15 +145,45 @@ async def inject_dependencies(request: Request, call_next):
     return response
 
 
-# Include router
-app.include_router(router, prefix="/api/v1")
-
-
 @app.get("/")
 async def root():
     """Root endpoint."""
     return {"service": "svc-api", "version": "0.1.0", "status": "running"}
 
+
+@app.get("/healthz")
+async def health_check() -> dict:
+    """Liveness probe."""
+    return {"status": "ok"}
+
+
+@app.get("/readyz")
+async def readiness_check() -> dict:
+    """Readiness probe - checks if service is initialized."""
+    if app_state.job_service is None:
+        return JSONResponse(
+            status_code=503,
+            content={"status": "not ready", "reason": "service not initialized"},
+        )
+    
+    try:
+        # Try to get a non-existent job to test DynamoDB connection
+        app_state.job_service.get_job("health-check-test-id")
+        return {"status": "ready"}
+    except Exception as e:
+        # If it's a "not found" error, that's fine - DynamoDB is working
+        if "not found" in str(e).lower():
+            return {"status": "ready"}
+        return JSONResponse(
+            status_code=503,
+            content={"status": "not ready", "reason": str(e)},
+        )
+
+
+# Include router
+app.include_router(router, prefix="/api/v1")
+for route in app.routes:
+       print(f"{route.path} - {route.methods if hasattr(route, 'methods') else 'N/A'}")
 
 if __name__ == "__main__":
     import uvicorn

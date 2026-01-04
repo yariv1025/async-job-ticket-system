@@ -139,33 +139,3 @@ async def retry_job(
     except RuntimeError as e:
         raise HTTPException(status_code=500, detail=str(e)) from e
 
-
-@router.get("/healthz")
-async def health_check() -> dict:
-    """Liveness probe."""
-    return {"status": "ok"}
-
-
-@router.get("/readyz")
-async def readiness_check(
-    http_request: Request,
-) -> dict:
-    """Readiness probe - checks DynamoDB connection."""
-    try:
-        job_service = get_job_service_from_request(http_request)
-    except HTTPException:
-        return JSONResponse(
-            status_code=503,
-            content={"status": "not ready", "reason": "service not initialized"},
-        )
-
-    try:
-        # Try to get a non-existent job to test DynamoDB connection
-        job_service.get_job("health-check-test-id")
-        return {"status": "ready"}
-    except Exception as e:
-        return JSONResponse(
-            status_code=503,
-            content={"status": "not ready", "reason": str(e)},
-        )
-

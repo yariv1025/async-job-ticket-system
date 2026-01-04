@@ -1,0 +1,48 @@
+version: '3.8'
+
+services:
+  svc-api:
+    image: <ECR_ACCOUNT>.dkr.ecr.<REGION>.amazonaws.com/svc-api:latest
+    container_name: svc-api
+    restart: unless-stopped
+    ports:
+      - "8080:8080"
+    environment:
+      - AWS_REGION=<REGION>
+      - ENV=<ENV>
+      - LOG_LEVEL=INFO
+      - PORT=8080
+      - DDB_TABLE=Jobs
+      - SQS_QUEUE_URL=<SQS_QUEUE_URL>
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/healthz"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 60s
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+    # IAM role attached to EC2 instance will be used for AWS credentials
+
+  svc-worker:
+    image: <ECR_ACCOUNT>.dkr.ecr.<REGION>.amazonaws.com/svc-worker:latest
+    container_name: svc-worker
+    restart: unless-stopped
+    environment:
+      - AWS_REGION=<REGION>
+      - ENV=<ENV>
+      - LOG_LEVEL=INFO
+      - DDB_TABLE=Jobs
+      - SQS_QUEUE_URL=<SQS_QUEUE_URL>
+      - MAX_MESSAGES=10
+      - WAIT_TIME_SECONDS=20
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+    # IAM role attached to EC2 instance will be used for AWS credentials
+
