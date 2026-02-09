@@ -1,0 +1,67 @@
+[
+  {
+    "ParameterKey": "Environment",
+    "ParameterValue": "prod"
+  },
+  {
+    "ParameterKey": "ProjectName",
+    "ParameterValue": "jobsys"
+  },
+  {
+    "ParameterKey": "ReadCapacityUnits",
+    "ParameterValue": "10"
+  },
+  {
+    "ParameterKey": "WriteCapacityUnits",
+    "ParameterValue": "10"
+  },
+  {
+    "ParameterKey": "VisibilityTimeout",
+    "ParameterValue": "300"
+  },
+  {
+    "ParameterKey": "MessageRetentionPeriod",
+    "ParameterValue": "1209600"
+  },
+  {
+    "ParameterKey": "MaxReceiveCount",
+    "ParameterValue": "3"
+  },
+  {
+    "ParameterKey": "ImageTagMutability",
+    "ParameterValue": "IMMUTABLE"
+  },
+  {
+    "ParameterKey": "ScanOnPush",
+    "ParameterValue": "true"
+  },
+  {
+    "ParameterKey": "AWSRegion",
+    "ParameterValue": "us-east-1"
+  },
+  {
+    "ParameterKey": "LambdaMemorySize",
+    "ParameterValue": "512"
+  },
+  {
+    "ParameterKey": "LambdaTimeout",
+    "ParameterValue": "60"
+  },
+  {
+    "ParameterKey": "BatchSize",
+    "ParameterValue": "1"
+  },
+  {
+    "ParameterKey": "InstanceType",
+    "ParameterValue": "t3.small"
+  },
+  {
+    "ParameterKey": "APIPort",
+    "ParameterValue": "8080"
+  },
+  {
+    "ParameterKey": "LogRetentionDays",
+    "ParameterValue": "30"
+  }
+]
+

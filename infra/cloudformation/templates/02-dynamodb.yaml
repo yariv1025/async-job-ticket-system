@@ -1,0 +1,106 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: 'DynamoDB Table for Job System - Production Grade'
+
+Parameters:
+  Environment:
+    Type: String
+    Default: dev
+    AllowedValues: [dev, staging, prod]
+    Description: Environment name (dev, staging, prod)
+  
+  ProjectName:
+    Type: String
+    Default: jobsys
+    Description: Project name for resource naming
+
+  ReadCapacityUnits:
+    Type: Number
+    Default: 5
+    Description: 'Read capacity units (free tier: 25)'
+    MinValue: 1
+    MaxValue: 100
+
+  WriteCapacityUnits:
+    Type: Number
+    Default: 5
+    Description: 'Write capacity units (free tier: 25)'
+    MinValue: 1
+    MaxValue: 100
+
+Metadata:
+  AWS::CloudFormation::Interface:
+    ParameterGroups:
+      - Label:
+          default: Configuration
+        Parameters:
+          - Environment
+          - ProjectName
+      - Label:
+          default: Capacity
+        Parameters:
+          - ReadCapacityUnits
+          - WriteCapacityUnits
+
+Resources:
+  JobsTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      TableName: !Sub '${ProjectName}-Jobs-${Environment}'
+      BillingMode: PROVISIONED
+      AttributeDefinitions:
+        - AttributeName: jobId
+          AttributeType: S
+        - AttributeName: idempotencyKey
+          AttributeType: S
+      KeySchema:
+        - AttributeName: jobId
+          KeyType: HASH
+      GlobalSecondaryIndexes:
+        - IndexName: idempotencyKey-index
+          KeySchema:
+            - AttributeName: idempotencyKey
+              KeyType: HASH
+          Projection:
+            ProjectionType: ALL
+          ProvisionedThroughput:
+            ReadCapacityUnits: !Ref ReadCapacityUnits
+            WriteCapacityUnits: !Ref WriteCapacityUnits
+      ProvisionedThroughput:
+        ReadCapacityUnits: !Ref ReadCapacityUnits
+        WriteCapacityUnits: !Ref WriteCapacityUnits
+      TimeToLiveSpecification:
+        Enabled: true
+        AttributeName: expiresAt
+      StreamSpecification:
+        StreamViewType: NEW_AND_OLD_IMAGES
+      PointInTimeRecoverySpecification:
+        PointInTimeRecoveryEnabled: true
+      Tags:
+        - Key: Environment
+          Value: !Ref Environment
+        - Key: Project
+          Value: !Ref ProjectName
+        - Key: ManagedBy
+          Value: CloudFormation
+        - Key: Name
+          Value: !Sub '${ProjectName}-Jobs-${Environment}'
+
+Outputs:
+  TableName:
+    Description: DynamoDB table name
+    Value: !Ref JobsTable
+    Export:
+      Name: !Sub '${ProjectName}-${Environment}-TableName'
+
+  TableArn:
+    Description: DynamoDB table ARN
+    Value: !GetAtt JobsTable.Arn
+    Export:
+      Name: !Sub '${ProjectName}-${Environment}-TableArn'
+
+  IdempotencyIndexName:
+    Description: Global Secondary Index name for idempotency
+    Value: idempotencyKey-index
+    Export:
+      Name: !Sub '${ProjectName}-${Environment}-IdempotencyIndex'
+

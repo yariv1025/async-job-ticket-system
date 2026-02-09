@@ -1,0 +1,111 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: 'Parameter Store Configuration for Job System - Production Grade'
+
+Parameters:
+  Environment:
+    Type: String
+    Default: dev
+    AllowedValues: [dev, staging, prod]
+    Description: Environment name (dev, staging, prod)
+  
+  ProjectName:
+    Type: String
+    Default: jobsys
+    Description: Project name for resource naming
+
+  # These will be populated from other stack outputs
+  TableName:
+    Type: String
+    Description: DynamoDB table name (from DynamoDB stack)
+
+  JobsQueueUrl:
+    Type: String
+    Description: SQS queue URL (from SQS stack)
+
+  DLQUrl:
+    Type: String
+    Description: DLQ URL (from SQS stack)
+
+  AWSRegion:
+    Type: String
+    Default: us-east-1
+    Description: AWS region
+
+Metadata:
+  AWS::CloudFormation::Interface:
+    ParameterGroups:
+      - Label:
+          default: Configuration
+        Parameters:
+          - Environment
+          - ProjectName
+          - AWSRegion
+      - Label:
+          default: References (from other stacks)
+        Parameters:
+          - TableName
+          - JobsQueueUrl
+          - DLQUrl
+
+Resources:
+  # DynamoDB Table Name Parameter
+  TableNameParameter:
+    Type: AWS::SSM::Parameter
+    Properties:
+      Name: !Sub '/${ProjectName}/${Environment}/dynamodb/table-name'
+      Type: String
+      Value: !Ref TableName
+      Description: DynamoDB table name for job system
+      Tags:
+        Environment: !Ref Environment
+        Project: !Ref ProjectName
+
+  # SQS Queue URL Parameter
+  QueueUrlParameter:
+    Type: AWS::SSM::Parameter
+    Properties:
+      Name: !Sub '/${ProjectName}/${Environment}/sqs/queue-url'
+      Type: String
+      Value: !Ref JobsQueueUrl
+      Description: SQS queue URL for job system
+      Tags:
+        Environment: !Ref Environment
+        Project: !Ref ProjectName
+
+  # DLQ URL Parameter
+  DLQUrlParameter:
+    Type: AWS::SSM::Parameter
+    Properties:
+      Name: !Sub '/${ProjectName}/${Environment}/sqs/dlq-url'
+      Type: String
+      Value: !Ref DLQUrl
+      Description: SQS DLQ URL for job system
+      Tags:
+        Environment: !Ref Environment
+        Project: !Ref ProjectName
+
+  # AWS Region Parameter
+  RegionParameter:
+    Type: AWS::SSM::Parameter
+    Properties:
+      Name: !Sub '/${ProjectName}/${Environment}/aws/region'
+      Type: String
+      Value: !Ref AWSRegion
+      Description: AWS region for job system
+      Tags:
+        Environment: !Ref Environment
+        Project: !Ref ProjectName
+
+Outputs:
+  TableNameParameterName:
+    Description: Parameter Store name for table name
+    Value: !Ref TableNameParameter
+    Export:
+      Name: !Sub '${ProjectName}-${Environment}-TableNameParameter'
+
+  QueueUrlParameterName:
+    Description: Parameter Store name for queue URL
+    Value: !Ref QueueUrlParameter
+    Export:
+      Name: !Sub '${ProjectName}-${Environment}-QueueUrlParameter'
+

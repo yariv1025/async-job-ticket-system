@@ -1,0 +1,113 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: 'SQS Queues for Job System - Production Grade'
+
+Parameters:
+  Environment:
+    Type: String
+    Default: dev
+    AllowedValues: [dev, staging, prod]
+    Description: Environment name (dev, staging, prod)
+  
+  ProjectName:
+    Type: String
+    Default: jobsys
+    Description: Project name for resource naming
+
+  VisibilityTimeout:
+    Type: Number
+    Default: 300
+    Description: Visibility timeout in seconds (5 minutes)
+    MinValue: 0
+    MaxValue: 43200
+
+  MessageRetentionPeriod:
+    Type: Number
+    Default: 1209600
+    Description: Message retention period in seconds (14 days)
+    MinValue: 60
+    MaxValue: 1209600
+
+  MaxReceiveCount:
+    Type: Number
+    Default: 3
+    Description: Maximum receive count before moving to DLQ
+    MinValue: 1
+    MaxValue: 1000
+
+Metadata:
+  AWS::CloudFormation::Interface:
+    ParameterGroups:
+      - Label:
+          default: Configuration
+        Parameters:
+          - Environment
+          - ProjectName
+      - Label:
+          default: Queue Settings
+        Parameters:
+          - VisibilityTimeout
+          - MessageRetentionPeriod
+          - MaxReceiveCount
+
+Resources:
+  # Dead Letter Queue (created first, referenced by main queue)
+  DeadLetterQueue:
+    Type: AWS::SQS::Queue
+    Properties:
+      QueueName: !Sub '${ProjectName}-dlq-${Environment}'
+      MessageRetentionPeriod: !Ref MessageRetentionPeriod
+      Tags:
+        - Key: Environment
+          Value: !Ref Environment
+        - Key: Project
+          Value: !Ref ProjectName
+        - Key: ManagedBy
+          Value: CloudFormation
+        - Key: Name
+          Value: !Sub '${ProjectName}-DLQ-${Environment}'
+
+  # Main Job Queue
+  JobsQueue:
+    Type: AWS::SQS::Queue
+    Properties:
+      QueueName: !Sub '${ProjectName}-queue-${Environment}'
+      VisibilityTimeout: !Ref VisibilityTimeout
+      MessageRetentionPeriod: !Ref MessageRetentionPeriod
+      RedrivePolicy:
+        deadLetterTargetArn: !GetAtt DeadLetterQueue.Arn
+        maxReceiveCount: !Ref MaxReceiveCount
+      Tags:
+        - Key: Environment
+          Value: !Ref Environment
+        - Key: Project
+          Value: !Ref ProjectName
+        - Key: ManagedBy
+          Value: CloudFormation
+        - Key: Name
+          Value: !Sub '${ProjectName}-Queue-${Environment}'
+
+Outputs:
+  JobsQueueUrl:
+    Description: URL of the main jobs queue
+    Value: !Ref JobsQueue
+    Export:
+      Name: !Sub '${ProjectName}-${Environment}-JobsQueueUrl'
+
+  JobsQueueArn:
+    Description: ARN of the main jobs queue
+    Value: !GetAtt JobsQueue.Arn
+    Export:
+      Name: !Sub '${ProjectName}-${Environment}-JobsQueueArn'
+
+  DeadLetterQueueUrl:
+    Description: URL of the dead letter queue
+    Value: !Ref DeadLetterQueue
+    Export:
+      Name: !Sub '${ProjectName}-${Environment}-DLQUrl'
+
+  DeadLetterQueueArn:
+    Description: ARN of the dead letter queue
+    Value: !GetAtt DeadLetterQueue.Arn
+    Export:
+      Name: !Sub '${ProjectName}-${Environment}-DLQArn'
+

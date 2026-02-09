@@ -19,7 +19,7 @@ spec:
     spec:
       containers:
       - name: svc-api
-        # image: #TODO: <ECR_ACCOUNT>.dkr.ecr.us-east-1.amazonaws.com/svc-api:latest
+        # image: #TODO: 248189908494.dkr.ecr.us-east-1.amazonaws.com/svc-api:latest
         image: docker.io/library/svc-api:latest # local image
         imagePullPolicy: Never #Always
         ports:

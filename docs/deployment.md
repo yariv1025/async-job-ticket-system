@@ -200,12 +200,13 @@ aws logs tail /ecs/jobsys/svc-worker --follow --region us-east-1
 aws ecs describe-services --cluster jobsys-cluster --services svc-api svc-worker --region us-east-1
 ```
 
-#### Option B: Deploy to EC2 + Docker Compose (Simplest)
+#### Option B: Deploy to EC2 + Docker Compose (Simplest) - **Free Tier Eligible**
 
 **Why EC2 + Docker Compose?**
 - Simplest infrastructure (single EC2 instance)
 - Full control over the environment
 - Good for small applications
+- **Free tier eligible:** t2.micro instance (750 hours/month for 12 months)
 - Lower cost for always-on workloads
 
 **Deploy:**
@@ -224,7 +225,7 @@ This will:
 3. Deploy application using docker-compose
 
 **What gets created:**
-- EC2 instance (t3.small by default)
+- EC2 instance (t2.micro by default - free tier eligible)
 - Security group with ports 22 (SSH) and 8080 (API)
 - IAM role with necessary permissions
 

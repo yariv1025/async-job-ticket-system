@@ -8,7 +8,7 @@ This document provides a quick comparison of deployment options available for th
 |-------|----------|------------|------|-------------|
 | **Local K8s** | Learning, Development | Medium | Free | Manual |
 | **ECS Fargate** | Production (Recommended) | Low-Medium | Pay per task | Auto-scaling |
-| **EC2 + Docker Compose** | Small apps, Simple setup | Low | Fixed EC2 cost | Manual |
+| **EC2 + Docker Compose** | Small apps, Free tier | Low | Free (t2.micro) | Manual |
 
 ## Option 1: Kubernetes (Local Only)
 
@@ -44,6 +44,8 @@ This document provides a quick comparison of deployment options available for th
 - Want serverless containers (no EC2 management)
 - Small to medium applications
 
+**Note:** ECS Fargate is **NOT** free tier eligible (~$0.04/hour per task). For free tier, use EC2 + Docker Compose option.
+
 **Requirements:**
 - AWS account
 - AWS CLI configured
@@ -77,13 +79,14 @@ This document provides a quick comparison of deployment options available for th
 
 **Cost:** ~$0.04/hour per task (256 CPU, 512 MB) + data transfer
 
-## Option 3: EC2 + Docker Compose (Simplest)
+## Option 3: EC2 + Docker Compose (Simplest) - **Free Tier Eligible**
 
 **When to use:**
 - Small applications
 - Simple infrastructure needs
 - Always-on workloads
 - Full control over environment
+- **AWS Free Tier (new accounts)**
 
 **Requirements:**
 - AWS account
@@ -112,11 +115,13 @@ This document provides a quick comparison of deployment options available for th
 
 **Cons:**
 - Manual scaling
-- EC2 instance always running (cost)
+- EC2 instance always running (cost after free tier expires)
 - Need to manage EC2 instance
 - Single point of failure (unless multiple instances)
 
-**Cost:** ~$15-30/month for t3.small instance
+**Cost:** 
+- **Free Tier:** t2.micro or t3.micro, 750 hours/month for 12 months (one instance running 24/7)
+- **After free tier:** ~$8-10/month for t2.micro instance
 
 ## Decision Tree
 
@@ -127,6 +132,9 @@ Start
   │   └─> Use Local K8s
   │
   ├─ Production on AWS?
+  │   │
+  │   ├─ Free Tier Account?
+  │   │   └─> Use EC2 + Docker Compose (t2.micro)
   │   │
   │   ├─ Need auto-scaling?
   │   │   └─> Use ECS Fargate
@@ -162,6 +170,21 @@ aws logs tail /ecs/jobsys/svc-api --follow
 ```bash
 ssh ec2-user@<IP> 'cd /opt/jobsys && docker-compose logs -f'
 ```
+
+## Free Tier Information
+
+**AWS Free Tier (12 months for new accounts):**
+- **EC2:** t2.micro or t3.micro, 750 hours/month (one instance running 24/7)
+- **DynamoDB:** 25GB storage, 25 RCU, 25 WCU/month
+- **SQS:** 1M requests/month
+- **Lambda:** 1M requests, 400k GB-seconds/month
+- **CloudWatch Logs:** 5GB ingestion/month
+- **CloudWatch Metrics:** 10 custom metrics
+- **X-Ray:** 100k traces/month
+- **Parameter Store:** 10k parameters (standard tier)
+- **ECR:** 500MB storage/month
+
+**Note:** ECS Fargate is NOT free tier eligible. For free tier deployments, use EC2 + Docker Compose with t2.micro instance.
 
 ## Next Steps
 

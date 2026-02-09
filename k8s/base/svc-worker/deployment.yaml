@@ -19,7 +19,7 @@ spec:
     spec:
       containers:
       - name: svc-worker
-        # image: #TODO:<ECR_ACCOUNT>.dkr.ecr.us-east-1.amazonaws.com/svc-worker:latest
+        # image: #TODO:248189908494.dkr.ecr.us-east-1.amazonaws.com/svc-worker:latest
         image: docker.io/library/svc-worker:latest # local image
         imagePullPolicy: Never #Always
         env:

@@ -80,7 +80,7 @@ else
         --zip-file fileb:///tmp/dlq-handler.zip \
         --timeout 30 \
         --memory-size 128 \
-        --environment "Variables={AWS_REGION=$REGION}" \
+        --environment "Variables={DDB_TABLE=Jobs}" \
         --tracing-config Mode=Active \
         --region "$REGION" \
         >/dev/null 2>&1 || echo "Note: Function creation requires deployment package"

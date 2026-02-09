@@ -1,0 +1,156 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: 'Lambda Function for DLQ Handler - Production Grade'
+
+Parameters:
+  Environment:
+    Type: String
+    Default: dev
+    AllowedValues: [dev, staging, prod]
+    Description: Environment name (dev, staging, prod)
+  
+  ProjectName:
+    Type: String
+    Default: jobsys
+    Description: Project name for resource naming
+
+  LambdaExecutionRoleArn:
+    Type: String
+    Description: ARN of Lambda execution role (from IAM stack)
+
+  DLQArn:
+    Type: String
+    Description: ARN of the DLQ (from SQS stack)
+
+  TableName:
+    Type: String
+    Description: DynamoDB table name (from DynamoDB stack)
+
+  LambdaCodeS3Bucket:
+    Type: String
+    Default: ''
+    Description: S3 bucket containing Lambda code (leave empty to upload manually)
+    AllowedPattern: '^$|^[a-z0-9-]+$'
+
+  LambdaCodeS3Key:
+    Type: String
+    Default: ''
+    Description: S3 key for Lambda code zip file
+
+  LambdaMemorySize:
+    Type: Number
+    Default: 256
+    AllowedValues: [128, 256, 512, 1024, 2048, 3008]
+    Description: Lambda memory size in MB
+
+  LambdaTimeout:
+    Type: Number
+    Default: 30
+    MinValue: 3
+    MaxValue: 900
+    Description: Lambda timeout in seconds
+
+  BatchSize:
+    Type: Number
+    Default: 1
+    MinValue: 1
+    MaxValue: 10
+    Description: Number of messages to process per invocation
+
+Metadata:
+  AWS::CloudFormation::Interface:
+    ParameterGroups:
+      - Label:
+          default: Configuration
+        Parameters:
+          - Environment
+          - ProjectName
+      - Label:
+          default: Lambda Settings
+        Parameters:
+          - LambdaMemorySize
+          - LambdaTimeout
+          - BatchSize
+      - Label:
+          default: Code Deployment
+        Parameters:
+          - LambdaCodeS3Bucket
+          - LambdaCodeS3Key
+      - Label:
+          default: References (from other stacks)
+        Parameters:
+          - LambdaExecutionRoleArn
+          - DLQArn
+          - TableName
+
+Conditions:
+  HasS3Code: !Not [!Equals [!Ref LambdaCodeS3Bucket, '']]
+
+Resources:
+  # Lambda Function
+  DLQHandlerFunction:
+    Type: AWS::Lambda::Function
+    Properties:
+      FunctionName: !Sub '${ProjectName}-dlq-handler-${Environment}'
+      Runtime: python3.11
+      Role: !Ref LambdaExecutionRoleArn
+      Handler: handler.lambda_handler
+      Code:
+        S3Bucket: !If [HasS3Code, !Ref LambdaCodeS3Bucket, !Ref 'AWS::NoValue']
+        S3Key: !If [HasS3Code, !Ref LambdaCodeS3Key, !Ref 'AWS::NoValue']
+      MemorySize: !Ref LambdaMemorySize
+      Timeout: !Ref LambdaTimeout
+      Environment:
+        Variables:
+          DDB_TABLE: !Ref TableName
+      TracingConfig:
+        Mode: Active
+      Tags:
+        - Key: Environment
+          Value: !Ref Environment
+        - Key: Project
+          Value: !Ref ProjectName
+        - Key: ManagedBy
+          Value: CloudFormation
+
+  # Event Source Mapping (connects DLQ to Lambda)
+  DLQEventSourceMapping:
+    Type: AWS::Lambda::EventSourceMapping
+    DependsOn: DLQHandlerFunction
+    Properties:
+      EventSourceArn: !Ref DLQArn
+      FunctionName: !Ref DLQHandlerFunction
+      BatchSize: !Ref BatchSize
+      Enabled: true
+      MaximumBatchingWindowInSeconds: 0
+
+  # CloudWatch Log Group
+  DLQHandlerLogGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: !Sub '/aws/lambda/${DLQHandlerFunction}'
+      RetentionInDays: 14
+      Tags:
+        - Key: Environment
+          Value: !Ref Environment
+        - Key: Project
+          Value: !Ref ProjectName
+
+Outputs:
+  LambdaFunctionName:
+    Description: Name of the Lambda function
+    Value: !Ref DLQHandlerFunction
+    Export:
+      Name: !Sub '${ProjectName}-${Environment}-LambdaFunctionName'
+
+  LambdaFunctionArn:
+    Description: ARN of the Lambda function
+    Value: !GetAtt DLQHandlerFunction.Arn
+    Export:
+      Name: !Sub '${ProjectName}-${Environment}-LambdaFunctionArn'
+
+  EventSourceMappingUUID:
+    Description: UUID of the event source mapping
+    Value: !Ref DLQEventSourceMapping
+    Export:
+      Name: !Sub '${ProjectName}-${Environment}-EventSourceMappingUUID'
+

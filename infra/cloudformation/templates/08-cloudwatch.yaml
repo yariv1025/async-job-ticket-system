@@ -1,0 +1,77 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: 'CloudWatch Log Groups for Job System - Production Grade'
+
+Parameters:
+  Environment:
+    Type: String
+    Default: dev
+    AllowedValues: [dev, staging, prod]
+    Description: Environment name (dev, staging, prod)
+  
+  ProjectName:
+    Type: String
+    Default: jobsys
+    Description: Project name for resource naming
+
+  LogRetentionDays:
+    Type: Number
+    Default: 14
+    AllowedValues: [1, 3, 5, 7, 14, 30, 60, 90, 120, 150, 180, 365, 400, 545, 731, 1827, 3653]
+    Description: Log retention period in days
+
+Metadata:
+  AWS::CloudFormation::Interface:
+    ParameterGroups:
+      - Label:
+          default: Configuration
+        Parameters:
+          - Environment
+          - ProjectName
+          - LogRetentionDays
+
+Resources:
+  # API Service Log Group
+  APILogGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: !Sub '/aws/${ProjectName}/svc-api'
+      RetentionInDays: !Ref LogRetentionDays
+      Tags:
+        - Key: Environment
+          Value: !Ref Environment
+        - Key: Project
+          Value: !Ref ProjectName
+        - Key: Service
+          Value: svc-api
+        - Key: ManagedBy
+          Value: CloudFormation
+
+  # Worker Service Log Group
+  WorkerLogGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: !Sub '/aws/${ProjectName}/svc-worker'
+      RetentionInDays: !Ref LogRetentionDays
+      Tags:
+        - Key: Environment
+          Value: !Ref Environment
+        - Key: Project
+          Value: !Ref ProjectName
+        - Key: Service
+          Value: svc-worker
+        - Key: ManagedBy
+          Value: CloudFormation
+
+Outputs:
+  APILogGroupName:
+    Description: CloudWatch log group name for API service
+    Value: !Ref APILogGroup
+    Export:
+      Name: !Sub '${ProjectName}-${Environment}-APILogGroup'
+
+  WorkerLogGroupName:
+    Description: CloudWatch log group name for Worker service
+    Value: !Ref WorkerLogGroup
+    Export:
+      Name: !Sub '${ProjectName}-${Environment}-WorkerLogGroup'
+

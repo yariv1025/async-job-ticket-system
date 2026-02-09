@@ -1,0 +1,145 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: 'ECR Repositories for Job System - Production Grade'
+
+Parameters:
+  Environment:
+    Type: String
+    Default: dev
+    AllowedValues: [dev, staging, prod]
+    Description: Environment name (dev, staging, prod)
+  
+  ProjectName:
+    Type: String
+    Default: jobsys
+    Description: Project name for resource naming
+
+  ImageTagMutability:
+    Type: String
+    Default: MUTABLE
+    AllowedValues: [MUTABLE, IMMUTABLE]
+    Description: Image tag mutability (MUTABLE allows overwriting tags)
+
+  ScanOnPush:
+    Type: String
+    Default: 'true'
+    AllowedValues: ['true', 'false']
+    Description: Enable image scanning on push
+
+Metadata:
+  AWS::CloudFormation::Interface:
+    ParameterGroups:
+      - Label:
+          default: Configuration
+        Parameters:
+          - Environment
+          - ProjectName
+      - Label:
+          default: Security
+        Parameters:
+          - ImageTagMutability
+          - ScanOnPush
+
+Conditions:
+  ScanOnPushEnabled:
+    Fn::Equals:
+      - !Ref ScanOnPush
+      - 'true'
+
+Resources:
+  # ECR Repository for API Service
+  APIRepository:
+    Type: AWS::ECR::Repository
+    Properties:
+      RepositoryName: !Sub '${ProjectName}/svc-api'
+      ImageTagMutability: !Ref ImageTagMutability
+      ImageScanningConfiguration:
+        ScanOnPush: !If [ScanOnPushEnabled, true, false]
+      LifecyclePolicy:
+        LifecyclePolicyText: |
+          {
+            "rules": [
+              {
+                "rulePriority": 1,
+                "description": "Keep last 10 images",
+                "selection": {
+                  "tagStatus": "any",
+                  "countType": "imageCountMoreThan",
+                  "countNumber": 10
+                },
+                "action": {
+                  "type": "expire"
+                }
+              }
+            ]
+          }
+      Tags:
+        - Key: Environment
+          Value: !Ref Environment
+        - Key: Project
+          Value: !Ref ProjectName
+        - Key: ManagedBy
+          Value: CloudFormation
+        - Key: Service
+          Value: svc-api
+
+  # ECR Repository for Worker Service
+  WorkerRepository:
+    Type: AWS::ECR::Repository
+    Properties:
+      RepositoryName: !Sub '${ProjectName}/svc-worker'
+      ImageTagMutability: !Ref ImageTagMutability
+      ImageScanningConfiguration:
+        ScanOnPush: !If [ScanOnPushEnabled, true, false]
+      LifecyclePolicy:
+        LifecyclePolicyText: |
+          {
+            "rules": [
+              {
+                "rulePriority": 1,
+                "description": "Keep last 10 images",
+                "selection": {
+                  "tagStatus": "any",
+                  "countType": "imageCountMoreThan",
+                  "countNumber": 10
+                },
+                "action": {
+                  "type": "expire"
+                }
+              }
+            ]
+          }
+      Tags:
+        - Key: Environment
+          Value: !Ref Environment
+        - Key: Project
+          Value: !Ref ProjectName
+        - Key: ManagedBy
+          Value: CloudFormation
+        - Key: Service
+          Value: svc-worker
+
+Outputs:
+  APIRepositoryURI:
+    Description: URI of the API ECR repository
+    Value: !Sub '${AWS::AccountId}.dkr.ecr.${AWS::Region}.amazonaws.com/${APIRepository}'
+    Export:
+      Name: !Sub '${ProjectName}-${Environment}-APIRepositoryURI'
+
+  WorkerRepositoryURI:
+    Description: URI of the Worker ECR repository
+    Value: !Sub '${AWS::AccountId}.dkr.ecr.${AWS::Region}.amazonaws.com/${WorkerRepository}'
+    Export:
+      Name: !Sub '${ProjectName}-${Environment}-WorkerRepositoryURI'
+
+  APIRepositoryName:
+    Description: Name of the API ECR repository
+    Value: !Ref APIRepository
+    Export:
+      Name: !Sub '${ProjectName}-${Environment}-APIRepositoryName'
+
+  WorkerRepositoryName:
+    Description: Name of the Worker ECR repository
+    Value: !Ref WorkerRepository
+    Export:
+      Name: !Sub '${ProjectName}-${Environment}-WorkerRepositoryName'
+

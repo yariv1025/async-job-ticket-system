@@ -18,7 +18,7 @@ def setup_xray(service_name: str = "svc-worker"):
 
     xray_recorder.configure(
         service=service_name,
-        sampling_rules={"version": 1, "default": {"fixed_rate": 0.1}},
+        sampling_rules={"version": 1, "default": {"fixed_target": 1, "rate": 0.1}},
     )
 
     # Patch boto3 for X-Ray tracing

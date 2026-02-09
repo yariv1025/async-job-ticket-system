@@ -28,7 +28,6 @@ Resources:
       Environment:
         Variables:
           DDB_TABLE: !Ref TableName
-          AWS_REGION: !Ref AWS::Region
       Events:
         DLQEvent:
           Type: SQS

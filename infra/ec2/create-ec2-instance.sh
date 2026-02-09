@@ -5,7 +5,7 @@ set -e
 
 REGION="${AWS_REGION:-us-east-1}"
 ENV="${ENV:-dev}"
-INSTANCE_TYPE="${INSTANCE_TYPE:-t3.small}"
+INSTANCE_TYPE="${INSTANCE_TYPE:-t2.micro}"
 KEY_NAME="${KEY_NAME:-}"  # Optional: specify your EC2 key pair name
 SECURITY_GROUP_NAME="${SECURITY_GROUP_NAME:-jobsys-ec2-sg}"
 
