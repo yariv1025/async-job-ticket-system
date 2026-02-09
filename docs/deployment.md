@@ -1,64 +1,12 @@
 # Deployment Guide
 
+This guide covers **Kubernetes (local only)** and **AWS cloud** deployment. For **local development with LocalStack** (running API and worker on your machine against local AWS emulation), see the [Quick Start Guide](quick-start.md) instead—that is the canonical step-by-step for local setup.
+
 ## Prerequisites
 
-- AWS CLI configured with appropriate credentials (`aws configure`)
+- AWS CLI configured with appropriate credentials (`aws configure`) for cloud deployment
 - Docker installed (for building images)
 - Python 3.11+ installed (for local development)
-
-## Local Development Setup
-
-### 1. Start LocalStack
-
-```bash
-docker-compose up -d localstack
-```
-
-### 2. Initialize Local Infrastructure
-
-```bash
-./scripts/local-dev.sh
-```
-
-This creates:
-- DynamoDB table `Jobs`
-- SQS queue `jobs-queue`
-- DLQ `jobs-dlq`
-- Redrive policy
-
-### 3. Run Services Locally
-
-**svc-api:**
-```bash
-cd services/svc-api
-python3 -m venv venv
-source venv/bin/activate
-pip install poetry
-poetry install
-export AWS_ENDPOINT_URL=http://localhost:4566
-export AWS_ACCESS_KEY_ID=test
-export AWS_SECRET_ACCESS_KEY=test
-export AWS_DEFAULT_REGION=us-east-1
-export DDB_TABLE=Jobs
-export SQS_QUEUE_URL=http://localhost:4566/000000000000/jobs-queue
-python3 -m uvicorn svc_api.main:app --port 8080
-```
-
-**svc-worker:**
-```bash
-cd services/svc-worker
-python3 -m venv venv
-source venv/bin/activate
-pip install poetry
-poetry install
-export AWS_ENDPOINT_URL=http://localhost:4566
-export AWS_ACCESS_KEY_ID=test
-export AWS_SECRET_ACCESS_KEY=test
-export AWS_DEFAULT_REGION=us-east-1
-export DDB_TABLE=Jobs
-export SQS_QUEUE_URL=http://localhost:4566/000000000000/jobs-queue
-python3 -m svc_worker.main
-```
 
 ## Kubernetes Deployment (LOCAL ONLY)
 

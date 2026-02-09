@@ -1,6 +1,46 @@
 # Async Job Ticket System
 
-A production-ready asynchronous job processing system built on AWS services (DynamoDB, SQS, Lambda) and Kubernetes. This system demonstrates real-world patterns for idempotency, retries, observability, error handling, and distributed system design.
+A production-ready asynchronous job processing system built on AWS (DynamoDB, SQS, Lambda, EC2, ECS, ECR, IAM, CloudWatch, Parameter Store, CloudFormation) and Kubernetes. This system demonstrates real-world patterns for idempotency, retries, observability, error handling, and distributed system design.
+
+## About This Project
+
+This repo is a **learning project** for **AWS, Infrastructure as Code (IaC), Kubernetes, and CI/CD**. It provides hands-on practice with real-world patterns—async job queues, serverless (Lambda), managed services (DynamoDB, SQS), and containers—so you can learn these stacks by running and deploying the same application in different ways.
+
+**Technologies and concepts:**
+
+- **AWS:** DynamoDB, SQS, Lambda, EC2, ECS, ECR, IAM, CloudWatch, Parameter Store, CloudFormation
+- **Kubernetes:** local clusters (e.g. minikube)
+- **CI/CD:** GitHub Actions
+- **Application & tooling:** FastAPI, Docker, LocalStack
+
+**Disclaimer:** Although this repository contains scripts that automate infrastructure and deployment, I chose and recommend to perform all steps manually (AWS Console, CLI, CloudFormation, etc.) in order to learn the concepts and workflows. The scripts document the process and are available for others who prefer automation or for later use.
+
+## Four Ways to Run This System
+
+You can run this system in four ways, from local learning to automated cloud deployment. Pick one path (or follow them in order) based on what you want to learn.
+
+| Path | What you use | Best for | Doc / script |
+|------|----------------|----------|----------------|
+| **1. Local with K8s + LocalStack** | Local Kubernetes (minikube/kind/k3d) + LocalStack (DynamoDB, SQS) | Learning K8s and AWS services without cloud cost | [Deployment options](docs/deployment-options.md) (Option 1), `./scripts/deploy-k8s-local.sh` |
+| **2. Manual deploy on AWS** | AWS CLI scripts, EC2 or ECS, Parameter Store | Understanding AWS services and manual ops | [Manual deployment guide](docs/manual-deployment-guide.md) |
+| **3. Manual deploy with IaC** | CloudFormation (YAML stacks) | Learning IaC and repeatable infra | [IaC CloudFormation guide](docs/iac-cloudformation-guide.md), [infra/cloudformation/](infra/cloudformation/) |
+| **4. Deploy with CI/CD** | GitHub Actions (validate, deploy infra + app) | Learning pipelines and automated deployment | [CI/CD workflows](.github/workflows/README.md), [IaC guide – CI/CD section](docs/iac-cloudformation-guide.md) |
+
+**Suggested order:** Start with **Path 1** (local K8s + LocalStack) or the [Quick Start Guide](docs/quick-start.md), then try **Path 2** or **Path 3** on AWS, and finally **Path 4** for CI/CD.
+
+```mermaid
+flowchart LR
+  subgraph paths [Four ways to run]
+    P1[1. Local K8s plus LocalStack]
+    P2[2. Manual AWS]
+    P3[3. Manual IaC]
+    P4[4. CI/CD]
+  end
+  P1 --> Learn[Learn AWS K8s IaC CI/CD]
+  P2 --> Learn
+  P3 --> Learn
+  P4 --> Learn
+```
 
 ## 🎯 What This System Does
 
@@ -67,14 +107,9 @@ flowchart TB
     API -.->|Traces| XR
     W -.->|Traces| XR
     L -.->|Traces| XR
-    
-    style API fill:#4a90e2,stroke:#2c5aa0,color:#fff
-    style W fill:#50c878,stroke:#2d7a4a,color:#fff
-    style L fill:#ff9900,stroke:#cc7700,color:#fff
-    style DDB fill:#4051b5,stroke:#2d3570,color:#fff
-    style Q fill:#ff9900,stroke:#cc7700,color:#fff
-    style DLQ fill:#d13212,stroke:#9a2510,color:#fff
 ```
+
+You can run this full flow locally (K8s + LocalStack) or on AWS (manual or via IaC/CI/CD)—see [Four ways to run this system](#four-ways-to-run-this-system).
 
 ### Architecture Components
 
@@ -176,101 +211,16 @@ flowchart TB
 - **EC2 + Docker Compose**: Simple single-instance deployment
 - **No Kubernetes required**: Simpler alternatives for small applications
 
-## 🚀 Quick Start
-
-### Prerequisites
-- Docker installed and running
-- Python 3.11+ installed
-- AWS CLI installed (for LocalStack testing)
-- Basic terminal/command line knowledge
-
-### Local Development (Recommended First Step)
-
-**1. Start LocalStack (AWS emulator)**
-```bash
-docker-compose up -d localstack
-```
-
-**2. Initialize local infrastructure**
-```bash
-./scripts/local-dev.sh
-```
-
-This creates:
-- DynamoDB table: `Jobs`
-- SQS queue: `jobs-queue`
-- SQS DLQ: `jobs-dlq`
-
-**3. Run the API service**
-
-In one terminal:
-```bash
-cd services/svc-api
-python3 -m venv venv
-source venv/bin/activate
-pip install poetry && poetry install
-
-export AWS_ENDPOINT_URL=http://localhost:4566
-export AWS_ACCESS_KEY_ID=test
-export AWS_SECRET_ACCESS_KEY=test
-export AWS_DEFAULT_REGION=us-east-1
-export DDB_TABLE=Jobs
-export SQS_QUEUE_URL=$(aws --endpoint-url=http://localhost:4566 sqs get-queue-url --queue-name jobs-queue --query 'QueueUrl' --output text)
-
-python3 -m uvicorn svc_api.main:app --port 8080 --reload
-```
-
-**4. Run the Worker service**
-
-In another terminal:
-```bash
-cd services/svc-worker
-python3 -m venv venv
-source venv/bin/activate
-pip install poetry && poetry install
-
-export AWS_ENDPOINT_URL=http://localhost:4566
-export AWS_ACCESS_KEY_ID=test
-export AWS_SECRET_ACCESS_KEY=test
-export AWS_DEFAULT_REGION=us-east-1
-export DDB_TABLE=Jobs
-export SQS_QUEUE_URL=$(aws --endpoint-url=http://localhost:4566 sqs get-queue-url --queue-name jobs-queue --query 'QueueUrl' --output text)
-
-python -m svc_worker.main
-```
-
-**5. Test the system**
-
-Create a job:
-```bash
-curl -X POST http://localhost:8080/api/v1/jobs \
-  -H "Content-Type: application/json" \
-  -H "Idempotency-Key: test-key-123" \
-  -d '{
-    "type": "process_document",
-    "priority": "normal",
-    "params": {
-      "source": "s3://bucket/test.pdf"
-    }
-  }'
-```
-
-Check job status (replace `{jobId}` with the returned `jobId`):
-```bash
-curl http://localhost:8080/api/v1/jobs/{jobId}
-```
-
-The worker should process the job within a few seconds, and the status should change from `PENDING` → `PROCESSING` → `SUCCEEDED`.
-
-> 📖 **For detailed step-by-step instructions**, see the [Quick Start Guide](docs/quick-start.md)
-
 ## 📚 Documentation
 
-- **[Quick Start Guide](docs/quick-start.md)** - Step-by-step instructions for local development
-- **[Architecture Documentation](docs/architecture.md)** - Detailed system design and data flows
-- **[API Documentation](docs/api.md)** - REST API endpoints and examples
-- **[Deployment Guide](docs/deployment.md)** - Complete AWS deployment instructions
-- **[Deployment Options](docs/deployment-options.md)** - Comparison of deployment options (K8s local, ECS, EC2)
+- **[Quick Start Guide](docs/quick-start.md)** – Local development (no K8s), running tests, and cleanup
+- **[Deployment options](docs/deployment-options.md)** – Comparison and Path 1 (local K8s)
+- **[Manual AWS deployment](docs/manual-deployment-guide.md)** – Path 2
+- **[IaC and CI/CD](docs/iac-cloudformation-guide.md)** – Path 3 and 4 (CloudFormation, GitHub Actions)
+- **[CI/CD workflows](.github/workflows/README.md)** – Pipeline reference
+- **[Architecture](docs/architecture.md)** – System design and data flows
+- **[API](docs/api.md)** – REST endpoints and examples
+- **[Deployment guide](docs/deployment.md)** – Legacy AWS deployment reference
 
 ## 🏛️ Project Structure
 
@@ -292,12 +242,19 @@ The worker should process the job within a few seconds, and the status should ch
 │       └── tests/            # Unit tests
 ├── lambda/
 │   └── dlq-handler/          # Lambda function for DLQ processing
+├── .github/
+│   └── workflows/            # CI/CD (Path 4): infrastructure.yml, application.yml, combined.yml
 ├── infra/
 │   ├── aws-cli/              # Infrastructure setup scripts
 │   │   ├── create-table.sh   # DynamoDB table
 │   │   ├── create-queues.sh  # SQS queues and DLQ
 │   │   ├── create-ecr-repos.sh  # ECR repositories
 │   │   └── setup-parameter-store.sh  # Parameter Store config
+│   ├── cloudformation/      # IaC (Path 3): CloudFormation templates and deploy scripts
+│   │   ├── templates/       # 01-iam through 08-cloudwatch
+│   │   ├── parameters/      # dev.json, prod.json
+│   │   ├── deploy.sh
+│   │   └── teardown.sh
 │   ├── ecs/                  # ECS Fargate deployment (recommended)
 │   │   ├── task-definition-api.json
 │   │   ├── task-definition-worker.json
@@ -325,55 +282,34 @@ The worker should process the job within a few seconds, and the status should ch
 │   └── overlays/             # Environment-specific configs
 │       └── dev/
 ├── scripts/
-│   ├── local-dev.sh          # Local development setup
-│   ├── deploy.sh             # Kubernetes deployment
+│   ├── local-dev.sh          # Local development setup (LocalStack)
+│   ├── deploy-k8s-local.sh   # Path 1: local K8s deployment
+│   ├── deploy.sh             # Path 2: ECS or EC2 deployment (--ecs / --ec2)
 │   └── teardown.sh           # Cleanup script
 └── docs/                     # Documentation
     ├── quick-start.md
+    ├── deployment-options.md
+    ├── manual-deployment-guide.md
+    ├── iac-cloudformation-guide.md
     ├── architecture.md
     ├── api.md
     └── deployment.md
 ```
 
-## 🧪 Testing
-
-```bash
-# Test the API service
-cd services/svc-api
-pytest
-
-# Test the worker service
-cd services/svc-worker
-pytest
-```
-
 ## 🚢 Deployment
 
-### AWS Deployment
+Deployment is organized into **four paths**; see [Four ways to run this system](#four-ways-to-run-this-system) for the full map.
 
-**1. Create AWS infrastructure:**
-```bash
-./infra/aws-cli/create-table.sh
-./infra/aws-cli/create-queues.sh
-./infra/aws-cli/create-ecr-repos.sh
-./infra/aws-cli/setup-parameter-store.sh
-```
-
-**2. Build and push Docker images:**
-```bash
-# See docs/deployment.md for detailed instructions
-```
-
-**3. Deploy to Kubernetes:**
-```bash
-./scripts/deploy.sh
-```
-
-> 📖 **For detailed deployment instructions**, see the [Deployment Guide](docs/deployment.md)
+- **Local K8s (Path 1):** `./scripts/deploy-k8s-local.sh` — see [Deployment options](docs/deployment-options.md) (Option 1).
+- **AWS – ECS or EC2 (Path 2):** Create infra with [manual-deployment-guide](docs/manual-deployment-guide.md), then run `./scripts/deploy.sh --ecs` or `./scripts/deploy.sh --ec2`.
+- **IaC (Path 3):** [IaC CloudFormation guide](docs/iac-cloudformation-guide.md) and [infra/cloudformation/](infra/cloudformation/).
+- **CI/CD (Path 4):** [CI/CD workflows](.github/workflows/README.md) and the CI/CD section in the [IaC guide](docs/iac-cloudformation-guide.md).
 
 ## 💰 Cost Considerations
 
-This system is designed to be **free-tier eligible** for small-scale usage:
+**⚠️ Warning — your responsibility:** Running infrastructure or scripts in this repository (especially on AWS or other cloud providers) can incur costs. The author is not responsible for any charges you incur. Always be aware of what you run and execute: check your provider’s pricing, set billing alerts, and tear down resources when you are done. When in doubt, prefer local-only options (LocalStack, local Kubernetes) to avoid cloud costs.
+
+This system can be **free-tier eligible** for small-scale usage, but only under your own account and within your provider’s terms:
 
 - **DynamoDB**: 25GB storage, 25 RCU, 25 WCU (free tier)
 - **SQS**: 1M requests/month (free tier)
@@ -397,24 +333,10 @@ This system is designed to be **free-tier eligible** for small-scale usage:
 - **Input validation**: All API inputs are validated
 - **Idempotency protection**: Prevents duplicate job creation
 
-## 🧹 Cleanup
-
-**Local development:**
-```bash
-docker-compose down
-rm -rf localstack-data/
-```
-
-**AWS resources:**
-```bash
-./scripts/teardown.sh
-```
-
-⚠️ **Warning**: The teardown script deletes all AWS resources. Use with caution!
-
 ## 🤝 Contributing
 
-This is a learning project demonstrating production patterns. Feel free to:
+This is a learning project for AWS, IaC, K8s, and CI/CD, demonstrating production patterns. Feel free to experiment and learn:
+- Try different deployment paths (local K8s, manual AWS, IaC, CI/CD)
 - Experiment with different job types
 - Add new features
 - Improve error handling
@@ -426,4 +348,4 @@ MIT
 
 ---
 
-**Built with**: FastAPI, Python, AWS (DynamoDB, SQS, Lambda), Kubernetes, Docker, LocalStack
+**Built with:** FastAPI, Python, AWS (DynamoDB, SQS, Lambda, EC2, ECS, ECR, IAM, CloudWatch, Parameter Store, CloudFormation), Kubernetes, Docker, LocalStack

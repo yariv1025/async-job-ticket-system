@@ -159,11 +159,6 @@ cd ../svc-worker
 pytest
 ```
 
-##############################
-# TODO: continue from HERE!!!
-##############################
-
-
 ## Step 3: AWS Deployment (When Ready)
 
 Only proceed to AWS after local testing works!
@@ -246,6 +241,20 @@ export ECR_ACCOUNT=$(aws sts get-caller-identity --query Account --output text)
 - Make sure a job was created in the API
 - Check DynamoDB table exists: `aws --endpoint-url=http://localhost:4566 dynamodb list-tables`
 
+## Running unit tests
+
+Run the test suites for the API and worker services:
+
+```bash
+# Test the API service
+cd services/svc-api
+pytest
+
+# Test the worker service (from repo root)
+cd services/svc-worker
+pytest
+```
+
 ## Next Steps After Getting It Running
 
 1. **Explore the code**: Read through `services/svc-api/src/svc_api/` to understand the structure
@@ -279,4 +288,6 @@ When done with AWS:
 # Run teardown script (careful - this deletes everything!)
 ./scripts/teardown.sh
 ```
+
+⚠️ **Warning:** The teardown script deletes all AWS resources created for this project. Use with caution.
 
