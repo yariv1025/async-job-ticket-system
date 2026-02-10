@@ -42,6 +42,9 @@ localstack-data/
 .aws/
 *.pem
 
+# Lambda build artifacts (zip is built at deploy/CI)
+lambda/dlq-handler/*.zip
+
 # Kubernetes
 kubeconfig
 *.kubeconfig
