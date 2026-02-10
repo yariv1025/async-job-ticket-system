@@ -52,6 +52,8 @@ aws --endpoint-url=http://localhost:4566 sqs list-queues
 
 You should see "Jobs" table and both queues listed.
 
+**If the API later reports** `"non-existent table"` or readiness fails: LocalStack may not have had DynamoDB ready when the script ran. Run `./scripts/local-dev.sh` again (it waits for both DynamoDB and SQS and verifies the table exists before finishing).
+
 ### 1.3 Set Up Python Environment for API
 
 ```bash

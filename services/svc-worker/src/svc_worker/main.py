@@ -7,8 +7,8 @@ import sys
 import time
 from typing import Optional
 
-from .infra.dynamodb import DynamoDBRepository
-from .infra.sqs import SQSClient
+from .infra.dynamodb import DynamoDBRepositoryImpl
+from .infra.sqs import SQSClientImpl
 from .infra.parameter_store import ParameterStoreClient
 from .infra.metrics import CloudWatchMetricsClient
 from .infra.logger import setup_logging, StructLogger
@@ -41,8 +41,6 @@ signal.signal(signal.SIGTERM, signal_handler)
 
 def main():
     """Main worker loop."""
-    # Print to stdout immediately to verify startup
-    print("Starting svc-worker...", flush=True)
     logger.info("Starting svc-worker...")
 
     # Get configuration
@@ -72,8 +70,8 @@ def main():
         sys.exit(1)
 
     # Initialize infrastructure clients
-    dynamodb_repo = DynamoDBRepository(table_name=table_name, region=region)
-    sqs_client = SQSClient(region=region)
+    dynamodb_repo = DynamoDBRepositoryImpl(table_name=table_name, region=region)
+    sqs_client = SQSClientImpl(region=region)
     metrics_client = CloudWatchMetricsClient(namespace="JobsSystem", region=region)
 
     # Initialize job processor
@@ -84,9 +82,11 @@ def main():
         logger=logger,
     )
 
-    logger.info("svc-worker started successfully", table_name=table_name, queue_url=queue_url)
-    print(f"Worker started. Polling SQS queue: {queue_url}", flush=True)
-    print("Waiting for messages... (this may take up to 20 seconds)", flush=True)
+    logger.info(
+        "svc-worker started successfully; polling SQS",
+        table_name=table_name,
+        queue_url=queue_url,
+    )
 
     # Main processing loop
     max_messages = int(os.getenv("MAX_MESSAGES", "10"))

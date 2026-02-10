@@ -1,15 +1,19 @@
 """Lambda handler for DLQ messages."""
 
-import os
 import json
+import logging
+import os
 import boto3
-from typing import Dict, Any
+from typing import Any, Dict
 from botocore.exceptions import ClientError
 from aws_xray_sdk.core import xray_recorder
 from aws_xray_sdk.core import patch as xray_patch
 
 # Patch boto3 for X-Ray
 xray_patch(["boto3"])
+
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
 
 # Initialize clients
 dynamodb = boto3.resource("dynamodb", region_name=os.getenv("AWS_REGION", "us-east-1"))
@@ -33,7 +37,10 @@ def handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
             job_id = body.get("jobId")
 
             if not job_id:
-                print(f"Message missing jobId: {record.get('messageId')}")
+                logger.warning(
+                    "Message missing jobId",
+                    extra={"message_id": record.get("messageId")},
+                )
                 failed_count += 1
                 continue
 
@@ -56,18 +63,24 @@ def handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
                     },
                 )
 
-                print(f"Marked job {job_id} as FAILED_FINAL")
+                logger.info(
+                    "Marked job as FAILED_FINAL",
+                    extra={"job_id": job_id},
+                )
                 processed_count += 1
 
             except ClientError as e:
-                print(f"Failed to update job {job_id}: {e}")
+                logger.error(
+                    "Failed to update job",
+                    extra={"job_id": job_id, "error": str(e)},
+                )
                 failed_count += 1
 
         except json.JSONDecodeError as e:
-            print(f"Failed to parse message: {e}")
+            logger.warning("Failed to parse message", extra={"error": str(e)})
             failed_count += 1
         except Exception as e:
-            print(f"Error processing record: {e}")
+            logger.error("Error processing record", extra={"error": str(e)})
             failed_count += 1
 
     return {

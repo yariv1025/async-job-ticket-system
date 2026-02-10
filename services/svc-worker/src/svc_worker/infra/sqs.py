@@ -1,11 +1,12 @@
 """SQS client implementation."""
 
 import os
-import json
 import boto3
-from typing import List, Dict, Any, Optional
+from typing import Any, Dict, List
 from botocore.exceptions import ClientError
-from ..infra.xray import should_patch_xray, xray_capture
+from .xray import should_patch_xray, xray_capture
+
+from ..domain.interfaces import SQSClient
 
 # Patch boto3 for X-Ray only if not in local dev
 if should_patch_xray():
@@ -13,7 +14,7 @@ if should_patch_xray():
     xray_patch(["boto3"])
 
 
-class SQSClient:
+class SQSClientImpl(SQSClient):
     """SQS client implementation."""
 
     def __init__(self, region: str = "us-east-1"):

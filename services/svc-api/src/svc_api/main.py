@@ -182,8 +182,6 @@ async def readiness_check() -> dict:
 
 # Include router
 app.include_router(router, prefix="/api/v1")
-for route in app.routes:
-       print(f"{route.path} - {route.methods if hasattr(route, 'methods') else 'N/A'}")
 
 if __name__ == "__main__":
     import uvicorn

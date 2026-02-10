@@ -6,9 +6,7 @@ from typing import Optional
 from ..infra.xray import xray_capture
 
 from ..domain.job import Job, JobStatus
-from ..domain.interfaces import Logger
-from ..infra.dynamodb import DynamoDBRepository
-from ..infra.sqs import SQSClient
+from ..domain.interfaces import DynamoDBRepository, Logger, SQSClient
 from ..infra.metrics import CloudWatchMetricsClient
 
 

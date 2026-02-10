@@ -6,6 +6,9 @@ from typing import Optional
 from botocore.exceptions import ClientError
 from aws_xray_sdk.core import xray_recorder
 from .xray import xray_capture
+from .logger import StructLogger
+
+_logger = StructLogger("svc-worker.metrics")
 
 
 class CloudWatchMetricsClient:
@@ -37,5 +40,5 @@ class CloudWatchMetricsClient:
             )
         except ClientError as e:
             # Don't fail the request if metrics fail
-            print(f"Failed to put metric {metric_name}: {e}")
+            _logger.warning("Failed to put metric", metric_name=metric_name, error=str(e))
 

@@ -4,8 +4,9 @@ import os
 import boto3
 from typing import Optional
 from botocore.exceptions import ClientError
-from ..infra.xray import should_patch_xray, xray_capture
+from .xray import should_patch_xray, xray_capture
 
+from ..domain.interfaces import DynamoDBRepository
 from ..domain.job import Job, JobStatus
 
 # Patch boto3 for X-Ray only if not in local dev
@@ -14,7 +15,7 @@ if should_patch_xray():
     xray_patch(["boto3"])
 
 
-class DynamoDBRepository:
+class DynamoDBRepositoryImpl(DynamoDBRepository):
     """DynamoDB repository implementation."""
 
     def __init__(self, table_name: str, region: str = "us-east-1"):
@@ -61,7 +62,7 @@ class DynamoDBRepository:
             if result is not None:
                 update_expression += ", #result = :result"
                 expression_attribute_names["#result"] = "result"
-                expression_attribute_values[":result"] =result
+                expression_attribute_values[":result"] = result
 
             if error is not None:
                 update_expression += ", #error = :error"
